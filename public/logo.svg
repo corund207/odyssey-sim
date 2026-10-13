@@ -2,28 +2,28 @@
   <!-- Odyssey: steampunk airship emblem -->
   <defs>
     <linearGradient id="brass" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#e0b54e"/>
-      <stop offset="0.5" stop-color="#c9972c"/>
-      <stop offset="1" stop-color="#8a6420"/>
+      <stop offset="0" stop-color="#4e9ce0"/>
+      <stop offset="0.5" stop-color="#2c80c9"/>
+      <stop offset="1" stop-color="#20598a"/>
     </linearGradient>
     <linearGradient id="copper" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#d28a4d"/>
-      <stop offset="0.55" stop-color="#b87333"/>
-      <stop offset="1" stop-color="#7e4a1d"/>
+      <stop offset="0" stop-color="#4d96d2"/>
+      <stop offset="0.55" stop-color="#337cb8"/>
+      <stop offset="1" stop-color="#1d527e"/>
     </linearGradient>
     <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#7a5530"/>
-      <stop offset="1" stop-color="#3c2a16"/>
+      <stop offset="0" stop-color="#30597a"/>
+      <stop offset="1" stop-color="#162b3c"/>
     </linearGradient>
     <radialGradient id="sky" cx="0.5" cy="0.42" r="0.75">
-      <stop offset="0" stop-color="#33281c"/>
-      <stop offset="1" stop-color="#1f1710"/>
+      <stop offset="0" stop-color="#1c2933"/>
+      <stop offset="1" stop-color="#10181f"/>
     </radialGradient>
     <g id="tooth">
-      <rect x="242" y="4" width="28" height="38" rx="6" fill="url(#brass)" stroke="#6b4e1d" stroke-width="3"/>
+      <rect x="242" y="4" width="28" height="38" rx="6" fill="url(#brass)" stroke="#1d476b" stroke-width="3"/>
     </g>
     <g id="rivet">
-      <circle cx="256" cy="39" r="5" fill="#f1e3c5" opacity="0.85"/>
+      <circle cx="256" cy="39" r="5" fill="#c5ddf1" opacity="0.85"/>
     </g>
   </defs>
 
@@ -40,7 +40,7 @@
   <use href="#tooth" transform="rotate(270 256 256)"/>
   <use href="#tooth" transform="rotate(300 256 256)"/>
   <use href="#tooth" transform="rotate(330 256 256)"/>
-  <circle cx="256" cy="256" r="234" fill="url(#brass)" stroke="#6b4e1d" stroke-width="4"/>
+  <circle cx="256" cy="256" r="234" fill="url(#brass)" stroke="#1d476b" stroke-width="4"/>
 
   <!-- rivets on the brass band -->
   <use href="#rivet" transform="rotate(15 256 256)"/>
@@ -57,52 +57,52 @@
   <use href="#rivet" transform="rotate(345 256 256)"/>
 
   <!-- night-sky porthole -->
-  <circle cx="256" cy="256" r="200" fill="url(#sky)" stroke="#5a3c14" stroke-width="4"/>
-  <circle cx="256" cy="256" r="190" fill="none" stroke="#caa04a" stroke-width="2" stroke-dasharray="3 9" opacity="0.7"/>
+  <circle cx="256" cy="256" r="200" fill="url(#sky)" stroke="#143a5a" stroke-width="4"/>
+  <circle cx="256" cy="256" r="190" fill="none" stroke="#4a8fca" stroke-width="2" stroke-dasharray="3 9" opacity="0.7"/>
 
   <!-- stars -->
-  <circle cx="142" cy="118" r="2.5" fill="#f1e3c5" opacity="0.8"/>
-  <circle cx="362" cy="104" r="2" fill="#f1e3c5" opacity="0.6"/>
-  <circle cx="402" cy="280" r="2" fill="#f1e3c5" opacity="0.55"/>
-  <circle cx="110" cy="300" r="2" fill="#f1e3c5" opacity="0.55"/>
-  <circle cx="312" cy="86" r="1.6" fill="#f1e3c5" opacity="0.5"/>
-  <circle cx="176" cy="92" r="1.6" fill="#f1e3c5" opacity="0.5"/>
+  <circle cx="142" cy="118" r="2.5" fill="#c5ddf1" opacity="0.8"/>
+  <circle cx="362" cy="104" r="2" fill="#c5ddf1" opacity="0.6"/>
+  <circle cx="402" cy="280" r="2" fill="#c5ddf1" opacity="0.55"/>
+  <circle cx="110" cy="300" r="2" fill="#c5ddf1" opacity="0.55"/>
+  <circle cx="312" cy="86" r="1.6" fill="#c5ddf1" opacity="0.5"/>
+  <circle cx="176" cy="92" r="1.6" fill="#c5ddf1" opacity="0.5"/>
 
   <!-- tail fins -->
-  <path d="M132 166 L94 144 L106 192 Z" fill="#8a5a2b" stroke="#5a3c14" stroke-width="3" stroke-linejoin="round"/>
-  <path d="M132 230 L94 252 L106 204 Z" fill="#8a5a2b" stroke="#5a3c14" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M132 166 L94 144 L106 192 Z" fill="#2b5f8a" stroke="#143a5a" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M132 230 L94 252 L106 204 Z" fill="#2b5f8a" stroke="#143a5a" stroke-width="3" stroke-linejoin="round"/>
 
   <!-- balloon -->
-  <ellipse cx="256" cy="198" rx="138" ry="60" fill="url(#copper)" stroke="#5a3c14" stroke-width="4"/>
-  <path d="M196 145 C188 180 188 216 196 251" fill="none" stroke="#5a3c14" stroke-width="2.5" opacity="0.6"/>
-  <path d="M256 139 C252 178 252 218 256 257" fill="none" stroke="#5a3c14" stroke-width="2.5" opacity="0.6"/>
-  <path d="M316 145 C324 180 324 216 316 251" fill="none" stroke="#5a3c14" stroke-width="2.5" opacity="0.6"/>
+  <ellipse cx="256" cy="198" rx="138" ry="60" fill="url(#copper)" stroke="#143a5a" stroke-width="4"/>
+  <path d="M196 145 C188 180 188 216 196 251" fill="none" stroke="#143a5a" stroke-width="2.5" opacity="0.6"/>
+  <path d="M256 139 C252 178 252 218 256 257" fill="none" stroke="#143a5a" stroke-width="2.5" opacity="0.6"/>
+  <path d="M316 145 C324 180 324 216 316 251" fill="none" stroke="#143a5a" stroke-width="2.5" opacity="0.6"/>
   <!-- balloon highlight -->
-  <path d="M150 172 C190 148 322 148 362 172" fill="none" stroke="#e8c98f" stroke-width="5" opacity="0.45" stroke-linecap="round"/>
+  <path d="M150 172 C190 148 322 148 362 172" fill="none" stroke="#8fbfe8" stroke-width="5" opacity="0.45" stroke-linecap="round"/>
 
   <!-- brass nose cap and pennant -->
-  <circle cx="392" cy="198" r="13" fill="url(#brass)" stroke="#5a3c14" stroke-width="3"/>
-  <line x1="392" y1="186" x2="392" y2="152" stroke="#5a3c14" stroke-width="3"/>
-  <path d="M392 152 L424 161 L392 171 Z" fill="#8f2f25" stroke="#5a3c14" stroke-width="2" stroke-linejoin="round"/>
+  <circle cx="392" cy="198" r="13" fill="url(#brass)" stroke="#143a5a" stroke-width="3"/>
+  <line x1="392" y1="186" x2="392" y2="152" stroke="#143a5a" stroke-width="3"/>
+  <path d="M392 152 L424 161 L392 171 Z" fill="#25628f" stroke="#143a5a" stroke-width="2" stroke-linejoin="round"/>
 
   <!-- rigging -->
-  <line x1="206" y1="248" x2="220" y2="301" stroke="#6b4e1d" stroke-width="3"/>
-  <line x1="306" y1="248" x2="292" y2="301" stroke="#6b4e1d" stroke-width="3"/>
-  <line x1="256" y1="257" x2="256" y2="301" stroke="#6b4e1d" stroke-width="3"/>
+  <line x1="206" y1="248" x2="220" y2="301" stroke="#1d476b" stroke-width="3"/>
+  <line x1="306" y1="248" x2="292" y2="301" stroke="#1d476b" stroke-width="3"/>
+  <line x1="256" y1="257" x2="256" y2="301" stroke="#1d476b" stroke-width="3"/>
 
   <!-- propeller at the stern -->
   <g transform="rotate(28 170 326)">
-    <ellipse cx="170" cy="308" rx="6.5" ry="16" fill="#9a7022" stroke="#5a3c14" stroke-width="2"/>
-    <ellipse cx="170" cy="344" rx="6.5" ry="16" fill="#9a7022" stroke="#5a3c14" stroke-width="2"/>
+    <ellipse cx="170" cy="308" rx="6.5" ry="16" fill="#22639a" stroke="#143a5a" stroke-width="2"/>
+    <ellipse cx="170" cy="344" rx="6.5" ry="16" fill="#22639a" stroke="#143a5a" stroke-width="2"/>
   </g>
-  <circle cx="170" cy="326" r="7" fill="url(#brass)" stroke="#5a3c14" stroke-width="2"/>
+  <circle cx="170" cy="326" r="7" fill="url(#brass)" stroke="#143a5a" stroke-width="2"/>
 
   <!-- hull -->
   <path d="M180 300 L332 300 Q341 300 338 311 Q328 346 282 352 L230 352 Q184 346 174 311 Q171 300 180 300 Z"
-        fill="url(#wood)" stroke="#2f2010" stroke-width="4"/>
-  <line x1="178" y1="310" x2="334" y2="310" stroke="#caa04a" stroke-width="2.5" opacity="0.8"/>
+        fill="url(#wood)" stroke="#10212f" stroke-width="4"/>
+  <line x1="178" y1="310" x2="334" y2="310" stroke="#4a8fca" stroke-width="2.5" opacity="0.8"/>
   <!-- portholes -->
-  <circle cx="222" cy="328" r="9" fill="#f7ecd2" stroke="#8a6420" stroke-width="3.5"/>
-  <circle cx="256" cy="330" r="9" fill="#f7ecd2" stroke="#8a6420" stroke-width="3.5"/>
-  <circle cx="290" cy="328" r="9" fill="#f7ecd2" stroke="#8a6420" stroke-width="3.5"/>
+  <circle cx="222" cy="328" r="9" fill="#d2e6f7" stroke="#20598a" stroke-width="3.5"/>
+  <circle cx="256" cy="330" r="9" fill="#d2e6f7" stroke="#20598a" stroke-width="3.5"/>
+  <circle cx="290" cy="328" r="9" fill="#d2e6f7" stroke="#20598a" stroke-width="3.5"/>
 </svg>

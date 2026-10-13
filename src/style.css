@@ -1,33 +1,33 @@
-/* Odyssey Simulator — clean developer-tool UI with paired light/dark themes.
+/* Odyssey Simulator — Apple-inspired light/dark themes: neutral grays, blue accent.
    All colors flow through semantic tokens; components never use raw hex. */
 
 :root {
   color-scheme: light;
 
-  --bg: #f3f4f6;
+  --bg: #f5f5f7;
   --surface: #ffffff;
-  --surface-2: #eef0f3;
-  --surface-3: #e4e7ec;
+  --surface-2: #f0f0f2;
+  --surface-3: #e8e8ed;
   --surface-translucent: rgba(255, 255, 255, 0.92);
-  --border: #e2e5ea;
-  --border-strong: #c6cdd6;
-  --text: #171c23;
-  --muted: #4f5a68;
-  --faint: #67717f;
+  --border: #e5e5ea;
+  --border-strong: #c7c7cc;
+  --text: #1d1d1f;
+  --muted: #515154;
+  --faint: #6e6e73;
 
-  --accent: #f0b429;
-  --accent-hover: #e1a512;
-  --accent-ink: #231a04;
-  --accent-text: #8a6207;
-  --accent-ring: rgba(176, 125, 16, 0.35);
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --accent-ink: #ffffff;
+  --accent-text: #0071e3;
+  --accent-ring: rgba(0, 113, 227, 0.3);
 
-  --danger: #d4393f;
-  --danger-bg: rgba(212, 57, 63, 0.08);
-  --ok: #1e8e5a;
-  --info: #2563eb;
+  --danger: #ff3b30;
+  --danger-bg: rgba(255, 59, 48, 0.08);
+  --ok: #34c759;
+  --info: #007aff;
 
-  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
-  --shadow-md: 0 4px 16px rgba(16, 24, 40, 0.1);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
 
   --radius: 10px;
   --radius-sm: 7px;
@@ -38,27 +38,27 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --bg: #0e1116;
-  --surface: #151a21;
-  --surface-2: #1c222b;
-  --surface-3: #252d38;
-  --surface-translucent: rgba(21, 26, 33, 0.92);
-  --border: #262e39;
-  --border-strong: #3a4451;
-  --text: #e9edf2;
-  --muted: #9aa5b1;
-  --faint: #8a95a3;
+  --bg: #0b0b0d;
+  --surface: #1d1d1f;
+  --surface-2: #242426;
+  --surface-3: #2c2c2e;
+  --surface-translucent: rgba(29, 29, 31, 0.92);
+  --border: #35353a;
+  --border-strong: #48484c;
+  --text: #f5f5f7;
+  --muted: #a1a1a6;
+  --faint: #8e8e93;
 
-  --accent: #f0b429;
-  --accent-hover: #f6c453;
-  --accent-ink: #1d1503;
-  --accent-text: #f0b429;
-  --accent-ring: rgba(240, 180, 41, 0.35);
+  --accent: #0a84ff;
+  --accent-hover: #409cff;
+  --accent-ink: #ffffff;
+  --accent-text: #409cff;
+  --accent-ring: rgba(10, 132, 255, 0.35);
 
-  --danger: #e5575c;
-  --danger-bg: rgba(229, 87, 92, 0.12);
-  --ok: #4cc38a;
-  --info: #60a5fa;
+  --danger: #ff453a;
+  --danger-bg: rgba(255, 69, 58, 0.12);
+  --ok: #30d158;
+  --info: #0a84ff;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.35);
@@ -817,8 +817,8 @@ input[type='checkbox']:checked::after {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #8b5cf6;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-ink);
   font-family: var(--font-mono);
   font-size: 10.5px;
   font-weight: 600;
@@ -826,7 +826,7 @@ input[type='checkbox']:checked::after {
 }
 
 .path-badge.start {
-  background: #22b573;
+  background: var(--ok);
 }
 
 .path-kind-label {
@@ -888,8 +888,8 @@ input[type='checkbox']:checked::after {
 }
 
 .path-item.selected {
-  border-color: #f0b429;
-  background: rgba(240, 180, 41, 0.07);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
 }
 
 .path-row.sub {

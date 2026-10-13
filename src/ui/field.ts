@@ -131,9 +131,9 @@ export class FieldView {
       ctx.setLineDash([]);
     };
 
-    // odometry's belief: dashed blue. Ground truth: amber
+    // odometry's belief: dashed blue. Ground truth: solid Apple blue
     drawTrail(world.odomTrail, 'rgba(96, 165, 250, 0.9)', [6, 5]);
-    drawTrail(world.trueTrail, '#f0b429', []);
+    drawTrail(world.trueTrail, '#0a84ff', []);
   }
 
   private drawPlannerPath(ctx: CanvasRenderingContext2D): void {
@@ -144,7 +144,7 @@ export class FieldView {
     for (let i = 1; i < points.length; i++) {
       const [x0, y0] = this.toPx(points[i - 1].x, points[i - 1].y);
       const [x1, y1] = this.toPx(points[i].x, points[i].y);
-      ctx.strokeStyle = 'rgba(139, 92, 246, 0.85)';
+      ctx.strokeStyle = 'rgba(175, 82, 222, 0.85)';
       ctx.setLineDash(points[i].forwards ? [] : [6, 5]);
       ctx.beginPath();
       ctx.moveTo(x0, y0);
@@ -165,14 +165,14 @@ export class FieldView {
         const mathTheta = ((90 - p.theta) * Math.PI) / 180;
         const hx = x + HEADING_ARM_PX * Math.cos(mathTheta);
         const hy = y - HEADING_ARM_PX * Math.sin(mathTheta);
-        ctx.strokeStyle = '#8b5cf6';
+        ctx.strokeStyle = '#af52de';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(x, y);
         ctx.lineTo(hx, hy);
         ctx.stroke();
-        ctx.fillStyle = selected ? '#ffffff' : '#8b5cf6';
-        ctx.strokeStyle = selected ? '#8b5cf6' : '#ffffff';
+        ctx.fillStyle = selected ? '#ffffff' : '#af52de';
+        ctx.strokeStyle = selected ? '#af52de' : '#ffffff';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.arc(hx, hy, 4.5, 0, Math.PI * 2);
@@ -181,14 +181,14 @@ export class FieldView {
       }
 
       if (selected) {
-        ctx.strokeStyle = '#f0b429';
+        ctx.strokeStyle = '#0a84ff';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(x, y, 13, 0, Math.PI * 2);
         ctx.stroke();
       }
 
-      ctx.fillStyle = isStart ? '#22b573' : '#8b5cf6';
+      ctx.fillStyle = isStart ? '#30d158' : '#af52de';
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
@@ -208,7 +208,7 @@ export class FieldView {
   private drawTarget(ctx: CanvasRenderingContext2D, target: FieldTarget, timeMs: number): void {
     const [x, y] = this.toPx(target.x, target.y);
     const pulse = 9 + 2.5 * Math.sin(timeMs / 260);
-    ctx.strokeStyle = '#f0b429';
+    ctx.strokeStyle = '#0a84ff';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(x, y, pulse, 0, Math.PI * 2);
@@ -285,7 +285,7 @@ export class FieldView {
     }
 
     // heading wedge
-    ctx.fillStyle = '#f0b429';
+    ctx.fillStyle = '#0a84ff';
     ctx.beginPath();
     ctx.moveTo(l / 2 - 3, 0);
     ctx.lineTo(l * 0.12, -w * 0.2);

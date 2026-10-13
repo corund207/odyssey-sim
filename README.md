@@ -12,8 +12,8 @@
 </p>
 
 <p align="center">
-  <a href="https://jonahchang207.github.io/odyssey/"><img alt="Library docs" src="https://img.shields.io/badge/library%20docs-jonahchang207.github.io%2Fodyssey-c9972c"></a>
-  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-8a6420"></a>
+  <a href="https://jonahchang207.github.io/odyssey/"><img alt="Library docs" src="https://img.shields.io/badge/library%20docs-jonahchang207.github.io%2Fodyssey-0071e3"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-515154"></a>
 </p>
 
 | Dark | Light |
