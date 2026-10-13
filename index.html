@@ -133,17 +133,51 @@
 
           <div id="tab-path" class="tab hidden">
             <p class="path-hint">
-              Click the field to add waypoints. Drag a point to move it; right-click deletes it.
-              <strong>Pose</strong> waypoints also control the arrival heading.
+              Click the field to add waypoints — the first one is the start. Your path saves automatically.
             </p>
+            <details class="path-help">
+              <summary>Shortcuts</summary>
+              <ul>
+                <li><strong>Drag</strong> a point to move it; drag the dot on its arrow to set the heading</li>
+                <li><strong>Double-click</strong> a point to switch Point ↔ Pose (Pose controls arrival heading)</li>
+                <li><strong>Arrow keys</strong> nudge the selected point (Shift = 2")</li>
+                <li><strong>Delete</strong> or right-click removes it; <strong>Esc</strong> deselects</li>
+                <li><strong>Ctrl+Z</strong> / <strong>Ctrl+Shift+Z</strong> undo and redo</li>
+              </ul>
+            </details>
+            <details id="path-import" class="path-import">
+              <summary>Paste auto code → extract path</summary>
+              <p class="path-import-hint">
+                Paste an Odyssey autonomous routine (the JS from this editor or the C++ it
+                generates). The waypoints are reconstructed onto the field, and the sanitized
+                version of it appears under Generated C++.
+              </p>
+              <textarea id="path-import-code" class="mono" spellcheck="false"
+                aria-label="Autonomous code to import"
+                placeholder="const lat = 0.0;
+chassis.setPose(-48, -48, 45);
+chassis.moveToPose(0, 0, 90, 5000, { lead: 0.6 });
+await chassis.waitUntilDone();"></textarea>
+              <div class="path-import-actions">
+                <button id="path-import-btn" class="btn primary small">Extract path</button>
+                <div id="path-import-notes" class="path-import-notes mono"></div>
+              </div>
+            </details>
             <div class="path-toolbar">
-              <button id="path-run" class="btn primary small">
+              <button id="path-run" class="btn primary small" disabled title="Add a start point and at least one waypoint">
                 <svg aria-hidden="true"><use href="#i-play" /></svg>Simulate
               </button>
+              <button id="path-undo" class="btn small" title="Undo (Ctrl+Z)" disabled>Undo</button>
+              <button id="path-redo" class="btn small" title="Redo (Ctrl+Shift+Z)" disabled>Redo</button>
               <button id="path-clear" class="btn small">Clear</button>
               <label class="control" for="path-timeout">Timeout
                 <input id="path-timeout" type="number" value="4000" step="500" min="500" /> ms
               </label>
+            </div>
+            <div class="path-toolbar">
+              <span class="path-stats mono" id="path-stats"></span>
+              <button id="path-mirror-x" class="btn small" title="Reflect left/right (x → −x)">Mirror ↔</button>
+              <button id="path-mirror-y" class="btn small" title="Reflect top/bottom (y → −y)">Mirror ↕</button>
             </div>
             <div id="path-list" class="path-list"></div>
             <div class="console-title path-code-title">

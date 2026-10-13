@@ -869,3 +869,174 @@ input[type='checkbox']:checked::after {
   padding: 10px 12px;
   transition: background-color 0.2s ease;
 }
+
+.path-stats {
+  flex: 1;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.path-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: default;
+}
+
+.path-item.selected {
+  border-color: #f0b429;
+  background: rgba(240, 180, 41, 0.07);
+}
+
+.path-row.sub {
+  padding-left: 26px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.path-row.sub:empty {
+  display: none;
+}
+
+.path-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.path-opt input[type='number'] {
+  width: 52px;
+}
+
+.path-order {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.btn.icon-only:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* fit the planner rows in the side panel without clipping values */
+.path-toolbar {
+  flex-wrap: wrap;
+}
+
+.path-row {
+  gap: 4px;
+}
+
+.path-row input[type='number'] {
+  width: 60px;
+  padding: 3px 3px 3px 5px;
+}
+
+.path-row select {
+  width: 68px;
+}
+
+.path-row input.path-theta {
+  width: 48px;
+}
+
+.path-kind-label {
+  width: 68px;
+}
+
+.path-opt input[type='number'] {
+  width: 50px;
+}
+
+/* usability: only the selected waypoint shows its extra options */
+.path-item:not(.selected) .path-row.sub {
+  display: none;
+}
+
+.path-item:not(.selected):hover {
+  background: var(--bg-hover, rgba(127, 127, 127, 0.08));
+}
+
+.path-help {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.path-help summary {
+  cursor: pointer;
+  width: fit-content;
+}
+
+.path-help ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  line-height: 1.6;
+}
+
+.path-import {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.path-import summary {
+  cursor: pointer;
+  width: fit-content;
+}
+
+.path-import-hint {
+  margin: 6px 0;
+  line-height: 1.5;
+}
+
+.path-import textarea {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+  box-sizing: border-box;
+  padding: 8px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.path-import textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-ring);
+}
+
+.path-import-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.path-import-notes {
+  flex: 1;
+  white-space: pre-wrap;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--faint);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.path-row input[type='number'] {
+  width: 64px;
+}
+
+.path-row input.path-theta {
+  width: 50px;
+}

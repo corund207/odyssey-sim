@@ -1,51 +1,143 @@
-// Path planner: click waypoints on the field, edit them, simulate the
-// route, and generate the equivalent C++ for the real robot.
+// Path planner UI: click waypoints on the field, edit them, simulate the
+// route, and generate the equivalent C++ for the real robot. The data model
+// and code generation live in pathModel.ts.
 
 import type { Chassis } from '../lib/chassis.ts';
-import type { FieldView } from './field.ts';
+import { HEADING_ARM_PX, type FieldView } from './field.ts';
+import { parseAutoCode } from './parseAuto.ts';
+import {
+  DEFAULT_TIMEOUT,
+  bearing,
+  buildProgram,
+  clampField,
+  fmt,
+  generateCpp,
+  mirrorPoints,
+  newPoint,
+  parseSavedPath,
+  pathLength,
+  snap,
+  wrapHeading,
+  type PathPoint,
+  type SavedPath,
+} from './pathModel.ts';
 
-export interface PathPoint {
-  x: number;
-  y: number;
-  /** how the robot reaches this point (ignored for the start point) */
-  kind: 'point' | 'pose';
-  /** arrival heading, compass degrees (start heading for the first point) */
-  theta: number;
-  forwards: boolean;
-  maxSpeed: number;
-}
+export type { PathPoint } from './pathModel.ts';
 
 const HIT_RADIUS_PX = 11;
+const HANDLE_RADIUS_PX = 8;
+const STORAGE_KEY = 'odyssey-path';
+const HISTORY_LIMIT = 100;
 
-function fmt(n: number): string {
-  const r = Math.round(n * 10) / 10;
-  return Number.isInteger(r) ? String(r) : r.toFixed(1);
-}
+type Drag =
+  | { kind: 'none' }
+  | { kind: 'point'; index: number }
+  | { kind: 'heading'; index: number };
 
 export class Planner {
   points: PathPoint[] = [];
-  timeout = 4000;
+  timeout = DEFAULT_TIMEOUT;
   active = false;
 
-  /** notified whenever the path changes (app re-renders nothing; we do) */
-  onSimulate: (() => void) | null = null;
+  /** fired after every change to the path, undo state or selection */
+  onChange: (() => void) | null = null;
 
   private field: FieldView;
   private listEl: HTMLElement;
   private codeEl: HTMLElement;
-  private dragIndex = -1;
+  private drag: Drag = { kind: 'none' };
   private dragged = false;
+  private selected = -1;
+
+  // undo/redo store serialized snapshots; `last` mirrors the current state
+  private past: string[] = [];
+  private future: string[] = [];
+  private last: string;
 
   constructor(field: FieldView, listEl: HTMLElement, codeEl: HTMLElement) {
     this.field = field;
     this.listEl = listEl;
     this.codeEl = codeEl;
+
+    const saved = parseSavedPath(localStorage.getItem(STORAGE_KEY));
+    if (saved) {
+      this.points = saved.points;
+      this.timeout = saved.timeout;
+    }
+    this.last = this.serialize();
+
     this.bindCanvas();
+    this.bindKeys();
     this.refresh();
   }
 
   // ------------------------------------------------------------------
-  // canvas interaction: add, drag, delete
+  // history + persistence
+  // ------------------------------------------------------------------
+
+  private serialize(): string {
+    const state: SavedPath = { points: this.points, timeout: this.timeout };
+    return JSON.stringify(state);
+  }
+
+  /** record the current state as an undo step (no-op if nothing changed) */
+  private commit(): void {
+    const now = this.serialize();
+    if (now === this.last) return;
+    this.past.push(this.last);
+    if (this.past.length > HISTORY_LIMIT) this.past.shift();
+    this.future = [];
+    this.last = now;
+    try {
+      localStorage.setItem(STORAGE_KEY, now);
+    } catch {
+      /* storage full or unavailable: the path just won't persist */
+    }
+    this.onChange?.();
+  }
+
+  private restore(snapshot: string): void {
+    const saved = parseSavedPath(snapshot)!;
+    this.points = saved.points;
+    this.timeout = saved.timeout;
+    this.last = snapshot;
+    this.selected = Math.min(this.selected, this.points.length - 1);
+    try {
+      localStorage.setItem(STORAGE_KEY, snapshot);
+    } catch {
+      /* see commit() */
+    }
+    this.refresh();
+  }
+
+  get canUndo(): boolean {
+    return this.past.length > 0;
+  }
+
+  get canRedo(): boolean {
+    return this.future.length > 0;
+  }
+
+  undo(): void {
+    const prev = this.past.pop();
+    if (prev === undefined) return;
+    this.future.push(this.last);
+    this.restore(prev);
+  }
+
+  redo(): void {
+    const next = this.future.pop();
+    if (next === undefined) return;
+    this.past.push(this.last);
+    this.restore(next);
+  }
+
+  get length(): number {
+    return pathLength(this.points);
+  }
+
+  // ------------------------------------------------------------------
+  // canvas interaction: add, select, drag, rotate, delete
   // ------------------------------------------------------------------
 
   private canvasPoint(e: MouseEvent): [number, number] {
@@ -61,42 +153,103 @@ export class Planner {
     return -1;
   }
 
+  private hasHeading(i: number): boolean {
+    return i === 0 || this.points[i].kind === 'pose';
+  }
+
+  /** the heading handle sits at the tip of the arrival-heading arrow */
+  private handleHitTest(px: number, py: number): number {
+    for (let i = this.points.length - 1; i >= 0; i--) {
+      if (!this.hasHeading(i)) continue;
+      const p = this.points[i];
+      const [x, y] = this.field.toPx(p.x, p.y);
+      const a = ((90 - p.theta) * Math.PI) / 180;
+      const hx = x + HEADING_ARM_PX * Math.cos(a);
+      const hy = y - HEADING_ARM_PX * Math.sin(a);
+      if (Math.hypot(px - hx, py - hy) <= HANDLE_RADIUS_PX) return i;
+    }
+    return -1;
+  }
+
+  private select(index: number): void {
+    if (this.selected === index) return;
+    this.selected = index;
+    this.syncSelection();
+    this.onChange?.();
+  }
+
   private bindCanvas(): void {
     const canvas = this.field.canvas;
 
     canvas.addEventListener('mousedown', (e) => {
       if (!this.active || e.button !== 0) return;
       const [px, py] = this.canvasPoint(e);
-      this.dragIndex = this.hitTest(px, py);
       this.dragged = false;
+
+      const handle = this.handleHitTest(px, py);
+      if (handle >= 0) {
+        this.drag = { kind: 'heading', index: handle };
+        this.select(handle);
+        return;
+      }
+      const hit = this.hitTest(px, py);
+      this.drag = hit >= 0 ? { kind: 'point', index: hit } : { kind: 'none' };
+      if (hit >= 0) this.select(hit);
     });
 
     canvas.addEventListener('mousemove', (e) => {
-      if (!this.active || this.dragIndex < 0) return;
+      if (!this.active) return;
       const [px, py] = this.canvasPoint(e);
-      const [x, y] = this.field.toField(px, py);
-      const p = this.points[this.dragIndex];
-      p.x = snap(clampField(x));
-      p.y = snap(clampField(y));
+
+      if (this.drag.kind === 'none') {
+        const overHandle = this.handleHitTest(px, py) >= 0;
+        canvas.style.cursor = overHandle ? 'crosshair' : this.hitTest(px, py) >= 0 ? 'grab' : '';
+        return;
+      }
+
+      const p = this.points[this.drag.index];
+      if (this.drag.kind === 'point') {
+        const [x, y] = this.field.toField(px, py);
+        p.x = snap(clampField(x));
+        p.y = snap(clampField(y));
+        this.updateRowInputs(this.drag.index);
+      } else {
+        const [cx, cy] = this.field.toPx(p.x, p.y);
+        const compass = (Math.atan2(px - cx, cy - py) * 180) / Math.PI;
+        p.theta = wrapHeading(Math.round(compass / 5) * 5);
+        this.updateRowInputs(this.drag.index);
+      }
       this.dragged = true;
-      this.updateRowInputs(this.dragIndex);
       this.renderCode();
     });
 
     window.addEventListener('mouseup', () => {
-      this.dragIndex = -1;
+      if (this.drag.kind !== 'none' && this.dragged) this.commit();
+      this.drag = { kind: 'none' };
     });
 
     canvas.addEventListener('click', (e) => {
       if (!this.active) return;
       const [px, py] = this.canvasPoint(e);
       // a click that ended a drag, or landed on an existing point, adds nothing
-      if (this.dragged || this.hitTest(px, py) >= 0) {
+      if (this.dragged || this.hitTest(px, py) >= 0 || this.handleHitTest(px, py) >= 0) {
         this.dragged = false;
         return;
       }
       const [x, y] = this.field.toField(px, py);
       this.addPoint(snap(clampField(x)), snap(clampField(y)));
+    });
+
+    // double-click a waypoint to flip it between Point and Pose
+    canvas.addEventListener('dblclick', (e) => {
+      if (!this.active) return;
+      const [px, py] = this.canvasPoint(e);
+      const hit = this.hitTest(px, py);
+      if (hit <= 0) return;
+      const p = this.points[hit];
+      p.kind = p.kind === 'pose' ? 'point' : 'pose';
+      this.refresh();
+      this.commit();
     });
 
     canvas.addEventListener('contextmenu', (e) => {
@@ -105,8 +258,43 @@ export class Planner {
       const hit = this.hitTest(px, py);
       if (hit >= 0) {
         e.preventDefault();
-        this.points.splice(hit, 1);
-        this.refresh();
+        this.removePoint(hit);
+      }
+    });
+  }
+
+  private bindKeys(): void {
+    window.addEventListener('keydown', (e) => {
+      if (!this.active) return;
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT') return;
+
+      const mod = e.ctrlKey || e.metaKey;
+      const key = e.key.toLowerCase();
+      if (mod && key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) this.redo();
+        else this.undo();
+      } else if (mod && key === 'y') {
+        e.preventDefault();
+        this.redo();
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && this.selected >= 0) {
+        e.preventDefault();
+        this.removePoint(this.selected);
+      } else if (e.key === 'Escape') {
+        this.select(-1);
+      } else if (e.key.startsWith('Arrow') && this.selected >= 0) {
+        // nudge the selected waypoint: 0.5" per press, 2" with Shift
+        e.preventDefault();
+        const step = e.shiftKey ? 2 : 0.5;
+        const p = this.points[this.selected];
+        if (e.key === 'ArrowLeft') p.x = clampField(p.x - step);
+        if (e.key === 'ArrowRight') p.x = clampField(p.x + step);
+        if (e.key === 'ArrowUp') p.y = clampField(p.y + step);
+        if (e.key === 'ArrowDown') p.y = clampField(p.y - step);
+        this.updateRowInputs(this.selected);
+        this.renderCode();
+        this.commit();
       }
     });
   }
@@ -116,88 +304,110 @@ export class Planner {
   // ------------------------------------------------------------------
 
   addPoint(x: number, y: number): void {
-    this.points.push({ x, y, kind: 'point', theta: 0, forwards: true, maxSpeed: 127 });
+    const point = newPoint(x, y);
+    const prev = this.points[this.points.length - 1];
+    // face the direction of travel, so switching to Pose needs no fiddling
+    if (prev && (prev.x !== x || prev.y !== y)) point.theta = bearing(prev, point);
+    this.points.push(point);
+    this.selected = this.points.length - 1;
     this.refresh();
+    this.commit();
+  }
+
+  removePoint(index: number): void {
+    this.points.splice(index, 1);
+    this.selected = Math.min(this.selected, this.points.length - 1);
+    this.refresh();
+    this.commit();
+  }
+
+  movePoint(index: number, delta: -1 | 1): void {
+    const to = index + delta;
+    if (to < 0 || to >= this.points.length) return;
+    [this.points[index], this.points[to]] = [this.points[to], this.points[index]];
+    this.selected = to;
+    this.refresh();
+    this.commit();
+  }
+
+  mirror(axis: 'x' | 'y'): void {
+    if (this.points.length === 0) return;
+    this.points = mirrorPoints(this.points, axis);
+    this.refresh();
+    this.commit();
+  }
+
+  setTimeoutMs(ms: number): void {
+    this.timeout = ms;
+    this.renderCode();
+  }
+
+  /** persist a timeout edit as its own undo step */
+  commitTimeout(): void {
+    this.commit();
   }
 
   clear(): void {
+    if (this.points.length === 0) return;
     this.points = [];
+    this.selected = -1;
     this.refresh();
+    this.commit();
   }
 
   /** sync the field overlay, the list UI and the generated code */
   refresh(): void {
     this.field.plannerPoints = this.points;
+    this.field.plannerSelected = this.selected;
     this.renderList();
     this.renderCode();
+    this.onChange?.();
   }
-
-  // ------------------------------------------------------------------
-  // C++ generation
-  // ------------------------------------------------------------------
 
   generateCpp(): string {
-    if (this.points.length === 0) {
-      return '// Click the field to add waypoints.\n// The C++ for your path appears here.';
-    }
-
-    const [start, ...rest] = this.points;
-    const lines: string[] = [
-      '// Path generated by Odyssey Simulator',
-      `// ${this.points.length} waypoint${this.points.length === 1 ? '' : 's'}`,
-      '',
-      `chassis.setPose(${fmt(start.x)}, ${fmt(start.y)}, ${fmt(start.theta)});`,
-    ];
-
-    for (const p of rest) {
-      lines.push('');
-      const params: string[] = [];
-      if (!p.forwards) params.push('.forwards = false');
-      if (p.maxSpeed !== 127) params.push(`.maxSpeed = ${fmt(p.maxSpeed)}`);
-      const paramStr = params.length > 0 ? `, {${params.join(', ')}}` : '';
-
-      if (p.kind === 'pose') {
-        lines.push(
-          `chassis.moveToPose(${fmt(p.x)}, ${fmt(p.y)}, ${fmt(p.theta)}, ${this.timeout}${paramStr});`,
-        );
-      } else {
-        lines.push(`chassis.moveToPoint(${fmt(p.x)}, ${fmt(p.y)}, ${this.timeout}${paramStr});`);
-      }
-      lines.push('chassis.waitUntilDone();');
-    }
-
-    return lines.join('\n');
+    return generateCpp(this.points, this.timeout);
   }
 
-  /** the same path as a runnable simulator program */
+  /**
+   * Reverse-engineer pasted Odyssey auto code into waypoints: replaces the
+   * current path and returns any parse notes to surface to the user.
+   */
+  importCode(code: string): string[] {
+    const result = parseAutoCode(code);
+    if (result.points.length > 0) {
+      this.points = result.points;
+      this.selected = -1;
+      if (result.timeout !== null) this.timeout = Math.max(500, Math.round(result.timeout));
+      this.refresh();
+      this.commit();
+    }
+    return result.warnings;
+  }
+
   buildProgram(): (chassis: Chassis) => Promise<void> {
-    const points = this.points.map((p) => ({ ...p }));
-    const timeout = this.timeout;
-    return async (chassis: Chassis) => {
-      const [start, ...rest] = points;
-      chassis.setPose(start.x, start.y, start.theta);
-      for (const p of rest) {
-        const params = { forwards: p.forwards, maxSpeed: p.maxSpeed };
-        if (p.kind === 'pose') {
-          await chassis.moveToPose(p.x, p.y, p.theta, timeout, params, false);
-        } else {
-          await chassis.moveToPoint(p.x, p.y, timeout, params, false);
-        }
-      }
-    };
+    return buildProgram(this.points, this.timeout);
   }
 
   // ------------------------------------------------------------------
   // list + code UI
   // ------------------------------------------------------------------
 
-  private rowInputs: { x: HTMLInputElement; y: HTMLInputElement }[] = [];
+  private rowInputs: { x: HTMLInputElement; y: HTMLInputElement; theta: HTMLInputElement }[] = [];
 
   private updateRowInputs(index: number): void {
     const row = this.rowInputs[index];
     if (!row) return;
     row.x.value = fmt(this.points[index].x);
     row.y.value = fmt(this.points[index].y);
+    row.theta.value = fmt(this.points[index].theta);
+  }
+
+  private syncSelection(): void {
+    this.field.plannerSelected = this.selected;
+    this.listEl.querySelectorAll('.path-item').forEach((el, i) => {
+      el.classList.toggle('selected', i === this.selected);
+      if (i === this.selected) el.scrollIntoView({ block: 'nearest' });
+    });
   }
 
   private renderList(): void {
@@ -213,16 +423,26 @@ export class Planner {
     }
 
     this.points.forEach((p, i) => {
+      const isStart = i === 0;
+      const item = document.createElement('div');
+      item.className = `path-item${i === this.selected ? ' selected' : ''}`;
+      item.addEventListener('mousedown', () => this.select(i));
+
       const row = document.createElement('div');
       row.className = 'path-row';
-      const isStart = i === 0;
+      const sub = document.createElement('div');
+      sub.className = 'path-row sub';
+      item.append(row, sub);
 
       const badge = document.createElement('span');
       badge.className = `path-badge${isStart ? ' start' : ''}`;
       badge.textContent = isStart ? 'S' : String(i);
       row.append(badge);
 
-      const num = (value: number, step: number, title: string, onInput: (v: number) => void) => {
+      const num = (
+        parent: HTMLElement, value: number, step: number, title: string,
+        onInput: (v: number) => void,
+      ) => {
         const input = document.createElement('input');
         input.type = 'number';
         input.step = String(step);
@@ -231,18 +451,25 @@ export class Planner {
         input.className = 'mono';
         input.addEventListener('input', () => {
           const v = Number(input.value);
-          if (Number.isFinite(v)) {
+          if (input.value !== '' && Number.isFinite(v)) {
             onInput(v);
             this.renderCode();
           }
         });
-        row.append(input);
+        // one undo step per finished edit, not per keystroke
+        input.addEventListener('change', () => this.commit());
+        parent.append(input);
         return input;
       };
 
-      const xInput = num(p.x, 0.5, 'x, inches', (v) => (p.x = clampField(v)));
-      const yInput = num(p.y, 0.5, 'y, inches', (v) => (p.y = clampField(v)));
-      this.rowInputs[i] = { x: xInput, y: yInput };
+      const xInput = num(row, p.x, 0.5, 'x, inches', (v) => (p.x = clampField(v)));
+      const yInput = num(row, p.y, 0.5, 'y, inches', (v) => (p.y = clampField(v)));
+
+      let leadInput: HTMLInputElement | null = null;
+      const refreshEnabled = () => {
+        theta.disabled = !this.hasHeading(i);
+        if (leadInput) leadInput.disabled = p.kind !== 'pose';
+      };
 
       if (isStart) {
         const label = document.createElement('span');
@@ -256,18 +483,40 @@ export class Planner {
         kind.value = p.kind;
         kind.addEventListener('change', () => {
           p.kind = kind.value as PathPoint['kind'];
-          theta.disabled = p.kind !== 'pose';
+          refreshEnabled();
           this.field.plannerPoints = this.points;
           this.renderCode();
+          this.commit();
         });
         row.append(kind);
       }
 
-      const theta = num(p.theta, 15, 'heading, compass degrees', (v) => (p.theta = v));
+      const theta = num(row, p.theta, 15, 'heading, compass degrees', (v) => (p.theta = wrapHeading(v)));
       theta.classList.add('path-theta');
-      if (!isStart) theta.disabled = p.kind !== 'pose';
+      this.rowInputs[i] = { x: xInput, y: yInput, theta };
 
+      const del = this.iconButton('×', `Delete waypoint ${isStart ? 'S' : i}`, () => this.removePoint(i));
+      del.classList.add('path-del');
+      row.append(del);
+
+      // second line: per-point motion options and ordering
       if (!isStart) {
+        const speedLabel = document.createElement('label');
+        speedLabel.className = 'path-opt';
+        speedLabel.append('speed');
+        num(speedLabel, p.maxSpeed, 5, 'max speed, 0 to 127', (v) => {
+          p.maxSpeed = Math.max(0, Math.min(127, v));
+        });
+        sub.append(speedLabel);
+
+        const leadLabel = document.createElement('label');
+        leadLabel.className = 'path-opt';
+        leadLabel.append('lead');
+        leadInput = num(leadLabel, p.lead, 0.05, 'carrot lead, 0 to 1 (pose points)', (v) => {
+          p.lead = Math.max(0, Math.min(1, v));
+        });
+        sub.append(leadLabel);
+
         const rev = document.createElement('label');
         rev.className = 'path-rev';
         rev.title = 'Drive backwards into this point';
@@ -277,35 +526,37 @@ export class Planner {
         check.addEventListener('change', () => {
           p.forwards = !check.checked;
           this.renderCode();
+          this.commit();
         });
         rev.append(check, document.createTextNode('rev'));
-        row.append(rev);
+        sub.append(rev);
       }
 
-      const del = document.createElement('button');
-      del.className = 'btn small icon-only path-del';
-      del.setAttribute('aria-label', `Delete waypoint ${isStart ? 'S' : i}`);
-      del.innerHTML = '<svg aria-hidden="true"><use href="#i-x" /></svg>';
-      del.addEventListener('click', () => {
-        this.points.splice(i, 1);
-        this.refresh();
-      });
-      row.append(del);
+      const order = document.createElement('span');
+      order.className = 'path-order';
+      const up = this.iconButton('↑', `Move waypoint ${i} earlier`, () => this.movePoint(i, -1));
+      const down = this.iconButton('↓', `Move waypoint ${i} later`, () => this.movePoint(i, 1));
+      up.disabled = i === 0;
+      down.disabled = i === this.points.length - 1;
+      order.append(up, down);
+      sub.append(order);
 
-      this.listEl.append(row);
+      refreshEnabled();
+      this.listEl.append(item);
     });
+  }
+
+  private iconButton(label: string, aria: string, onClick: () => void): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.className = 'btn small icon-only';
+    btn.textContent = label;
+    btn.setAttribute('aria-label', aria);
+    btn.title = aria;
+    btn.addEventListener('click', onClick);
+    return btn;
   }
 
   private renderCode(): void {
     this.codeEl.textContent = this.generateCpp();
   }
-}
-
-function clampField(v: number): number {
-  return Math.max(-72, Math.min(72, v));
-}
-
-/** snap to a half-inch so the generated code has clean coordinates */
-function snap(v: number): number {
-  return Math.round(v * 2) / 2;
 }

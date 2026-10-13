@@ -321,12 +321,30 @@ export class App {
     const timeoutInput = $('#path-timeout') as unknown as HTMLInputElement;
     timeoutInput.addEventListener('input', () => {
       const v = Number(timeoutInput.value);
-      if (Number.isFinite(v) && v > 0) {
-        this.planner.timeout = v;
-        this.planner.refresh();
-      }
+      if (Number.isFinite(v) && v > 0) this.planner.setTimeoutMs(v);
     });
+    timeoutInput.addEventListener('change', () => this.planner.commitTimeout());
 
+    const undo = $('#path-undo') as unknown as HTMLButtonElement;
+    const redo = $('#path-redo') as unknown as HTMLButtonElement;
+    const stats = $('#path-stats');
+    const run = $('#path-run') as unknown as HTMLButtonElement;
+    // keep the toolbar and timeout field in step with the planner's state
+    this.planner.onChange = () => {
+      run.disabled = this.planner.points.length < 2;
+      undo.disabled = !this.planner.canUndo;
+      redo.disabled = !this.planner.canRedo;
+      timeoutInput.value = String(this.planner.timeout);
+      const n = this.planner.points.length;
+      stats.textContent =
+        n === 0 ? '' : `${n} pt${n === 1 ? '' : 's'} · ${this.planner.length.toFixed(1)}"`;
+    };
+    this.planner.onChange();
+
+    undo.addEventListener('click', () => this.planner.undo());
+    redo.addEventListener('click', () => this.planner.redo());
+    $('#path-mirror-x').addEventListener('click', () => this.planner.mirror('x'));
+    $('#path-mirror-y').addEventListener('click', () => this.planner.mirror('y'));
     $('#path-clear').addEventListener('click', () => this.planner.clear());
 
     $('#path-run').addEventListener('click', () => {
@@ -336,6 +354,34 @@ export class App {
       }
       const program = this.planner.buildProgram();
       this.execute((chassis: unknown) => program(chassis as Chassis), 'path');
+    });
+
+    // reverse-engineer pasted auto code into the planner
+    const importBtn = $('#path-import-btn') as unknown as HTMLButtonElement;
+    const importCode = $('#path-import-code') as unknown as HTMLTextAreaElement;
+    const importNotes = $('#path-import-notes');
+    importBtn.addEventListener('click', () => {
+      const code = importCode.value;
+      if (!code.trim()) {
+        importNotes.textContent = 'Paste your autonomous code above first.';
+        return;
+      }
+      const warnings = this.planner.importCode(code);
+      const n = this.planner.points.length;
+      const noteLines = [
+        n === 0
+          ? '✗ No usable chassis motions found.'
+          : n === 1
+            ? '✓ Start pose imported.'
+            : `✓ ${n} waypoints imported — shown on the field and sanitized below.`,
+        ...warnings.map((w) => `⚠ ${w}`),
+      ];
+      importNotes.textContent = noteLines.join('\n');
+      this.clearConsole();
+      for (const line of noteLines) {
+        this.log(line.replace(/^([✓✗⚠]) /, '$1 '), line.startsWith('✗') ? 'error' : line.startsWith('⚠') ? 'info' : 'ok');
+      }
+      if (n > 0) this.log('▶ press Simulate to run the reconstructed path', 'info');
     });
 
     $('#path-copy').addEventListener('click', async () => {

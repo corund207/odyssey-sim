@@ -3,10 +3,13 @@
 // image is the 12'x12' playing surface, so -72..72 maps edge to edge.
 
 import type { World } from '../sim/world.ts';
-import type { PathPoint } from './planner.ts';
+import type { PathPoint } from './pathModel.ts';
 
 const FIELD = 144; // inches
 const MARGIN = 6; // inches of breathing room around the perimeter
+
+/** length in px of the arrival-heading arrow; its tip is the drag handle */
+export const HEADING_ARM_PX = 26;
 
 export interface FieldTarget {
   x: number;
@@ -19,6 +22,7 @@ export class FieldView {
   showGhost = true;
   showTrails = true;
   plannerPoints: PathPoint[] = [];
+  plannerSelected = -1;
 
   private ctx: CanvasRenderingContext2D;
   private size = 0;
@@ -153,14 +157,34 @@ export class FieldView {
       const [x, y] = this.toPx(p.x, p.y);
       const isStart = i === 0;
 
-      // arrival-heading arrow for pose points (and the start heading)
+      const selected = i === this.plannerSelected;
+
+      // arrival-heading arrow for pose points (and the start heading),
+      // ending in a handle that can be dragged to rotate it
       if (isStart || p.kind === 'pose') {
         const mathTheta = ((90 - p.theta) * Math.PI) / 180;
+        const hx = x + HEADING_ARM_PX * Math.cos(mathTheta);
+        const hy = y - HEADING_ARM_PX * Math.sin(mathTheta);
         ctx.strokeStyle = '#8b5cf6';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(x, y);
-        ctx.lineTo(x + 17 * Math.cos(mathTheta), y - 17 * Math.sin(mathTheta));
+        ctx.lineTo(hx, hy);
+        ctx.stroke();
+        ctx.fillStyle = selected ? '#ffffff' : '#8b5cf6';
+        ctx.strokeStyle = selected ? '#8b5cf6' : '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(hx, hy, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      if (selected) {
+        ctx.strokeStyle = '#f0b429';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, y, 13, 0, Math.PI * 2);
         ctx.stroke();
       }
 

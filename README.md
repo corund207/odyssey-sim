@@ -47,8 +47,14 @@ parameters.
 - **Path planner** — click waypoints onto the field (drag to refine,
   right-click to delete), choose point vs. pose arrivals, simulate the
   route, then copy the generated C++ straight into your autonomous
+  routine. Drag the arrow handle on a point to set its arrival heading, tune
+  per-point speed and `lead`, reorder or mirror the route for the other
+  alliance, and undo/redo with Ctrl+Z. Your path is saved in the browser.
 - **Code editor** — write autonomous routines against the `chassis` API;
   bundled examples cover every motion type
+- **Auto import** — paste an existing Odyssey autonomous routine and the
+  planner reverse-engineers it: waypoints appear on the field for editing
+  and simulation, with the sanitized C++ ready to copy back out
 - **Tuning panel** — drivetrain geometry, lateral/angular PID, exit
   conditions, slew, tracking wheel layout — the same knobs as the library
 - **Sensor noise** — toggle wheel slip and IMU drift to see how real
